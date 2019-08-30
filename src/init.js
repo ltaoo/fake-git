@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const { ROOT_DIR } = require('./common');
+const { ROOT_DIR, resolveFile } = require('./common');
 
 function init() {
     if (checkRootDirIsExist()) {
@@ -53,9 +53,6 @@ function checkRootDirIsExist() {
     } catch {
         return false;
     }
-}
-function resolveFile(pathname) {
-    return path.join(ROOT_DIR, pathname);
 }
 
 function createFile(filename) {
