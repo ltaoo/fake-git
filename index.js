@@ -2,16 +2,25 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const parser = require('yargs-parser');
+const parse = require('yargs-parser');
 
 const init = require('./src/init');
 const { resolveFile } = require('./src/common');
 const { isExist, createObjectDir, createObjectFile } = require('./src/utils/file');
-const { readObjectFile } = require('./src/utils/object');
+const {
+    readObjectFile,
+    getObjectFileType,
+} = require('./src/utils/object');
 
-const argv = parser(process.argv.slice(2));
+const argv = parse(process.argv.slice(2), {
+    alias: {
+        type: ['t'],
+    },
+    boolean: ['type', 'p'],
+});
 const command = argv._[0];
 const params = argv._.slice(1);
+console.log(argv);
 
 if (command === 'init') {
     init();
@@ -37,8 +46,16 @@ if (command === 'hash-object') {
 
 // git cat-file -p <hash>
 if (command === 'cat-file') {
-    const { p: hash } = argv;
-    const content = readObjectFile(hash);
-
-    console.log(content);
+    const { t, p } = argv;
+    const hash = params[0];
+    if (t) {
+        const fileType = getObjectFileType(hash);
+        console.log(fileType);
+        return;
+    }
+    if (p) {
+        const content = readObjectFile(hash);
+        console.log(content);
+        return;
+    }
 }

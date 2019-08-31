@@ -17,12 +17,25 @@ function splitHash(hash) {
 }
 module.exports.splitHash = splitHash;
 
-module.exports.readObjectFile = function readObjectFile(hash) {
+function getObjectFilePathFromHash(hash) {
     const { dir, filename } = splitHash(hash);
     const filepath = resolveObjectFile(dir, filename);
+    return filepath;
+}
+
+module.exports.readObjectFile = function readObjectFile(hash) {
+    const filepath = getObjectFilePathFromHash(hash);
     if (!isExist(filepath)) {
         console.log(`[error]: ${hash} object file is not found`);
         process.exit(1);
     }
     return fs.readFileSync(filepath, 'utf-8');
+}
+
+function getObjectFileType(hash) {
+    const filepath = getObjectFilePathFromHash(hash);
+    if (!isExist(filepath)) {
+        console.log(`[error]: ${hash} object file is not found`);
+        process.exit(1);
+    }
 }
