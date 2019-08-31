@@ -10,7 +10,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "denodeify": "^1.2.1",
     "yargs-parser": "^13.1.1"
   }
 }
