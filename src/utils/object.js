@@ -34,6 +34,28 @@ module.exports.createObjectFile = function createObjectFile(dir, filename, conte
     });
 }
 
+function splitHeaderAndContent(fileContent) {
+    const type = fileContent.split(' ')[0];
+    const content = fileContent.split(String.fromCharCode(0))[1];
+    return {
+        header: {
+            type,
+        },
+        content,
+    };
+}
+/**
+ * 
+ * @param {string} content - 被加密的内容
+ */
+function parseObjectFileContent(content) {
+    return readObjectFileContent(content)
+        .then((originalContent) => {
+            return splitHeaderAndContent(originalContent);
+        }, (err) => {
+            console.log(err);
+        });
+}
 
 function getObjectFilePathFromHash(hash) {
     const { dir, filename } = splitHash(hash);
@@ -47,7 +69,7 @@ module.exports.readObjectFile = function readObjectFile(hash) {
         console.log(`fatal: Not a valid object name ${hash}`);
         process.exit(1);
     }
-    return fs.readFileSync(filepath, 'utf-8');
+    return parseObjectFileContent(fs.readFileSync(filepath));
 }
 
 function getObjectFileType(hash) {
