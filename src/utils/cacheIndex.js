@@ -88,13 +88,15 @@ function splitMultipleObjectFiles(buffer, fileNum) {
     }
     return result;
 }
+// d8 32 9f c1 cc 93 87 80 ff dd 9f 94 e0 d3 64 e0 ea 74 f5 79
 /**
  * @param {Buffer}
  */
 module.exports.parseIndexFileContent = function parseIndexFileContent(content) {
+    console.log(content.length);
     const meta = content.slice(0, 12);
     const fileNum = getSize(meta.slice(8, 12));
     const lastContent = content.slice(12, content.length);
-    // console.log(lastContent.slice(72, 100));
+    console.log(lastContent.slice(70, 104));
     const files = splitMultipleObjectFiles(lastContent, fileNum);
 }

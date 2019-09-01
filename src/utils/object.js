@@ -35,11 +35,14 @@ module.exports.createObjectFile = function createObjectFile(dir, filename, conte
 }
 
 function splitHeaderAndContent(fileContent) {
-    const type = fileContent.split(' ')[0];
-    const content = fileContent.split(String.fromCharCode(0))[1];
+    const parts = fileContent.split(String.fromCharCode(0));
+    console.log(parts);
+    const [type, size] = parts[0].split(' ');
+    const content = parts[1];
     return {
         header: {
             type,
+            size,
         },
         content,
     };
@@ -51,6 +54,7 @@ function splitHeaderAndContent(fileContent) {
 function parseCompressedContent(content) {
     return inflate(content)
         .then((originalContent) => {
+            console.log(originalContent);
             return splitHeaderAndContent(originalContent);
         }, (err) => {
             console.log(err);
@@ -81,8 +85,14 @@ function getObjectFileType(hash) {
 }
 
 function createObjectFileContent(content) {
-    const input = Buffer.from(`blob ${content.length}${String.fromCharCode(0)}${content}`, 'utf-8');
-    return input;
+    return Buffer.from(`blob ${content.length}${String.fromCharCode(0)}${content}`, 'utf-8');
+}
+function createTreeFileContent({
+    filepath,
+    hash,
+    mode,
+}) {
+    return Buffer.from(`tree ${content.length}${String.fromCharCode(0)}${content}`, 'utf-8');
 }
 module.exports.createObjectFileContent = createObjectFileContent;
 
@@ -102,7 +112,6 @@ module.exports.inflate = inflate;
 
 function readCompressedFile(filepath) {
     const content = fs.readFileSync(filepath);
-    console.log('compressed content', content);
     return parseCompressedContent(content);
 }
 

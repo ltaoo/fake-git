@@ -2,7 +2,6 @@ const fs = require('fs');
 const path = require('path');
 
 const parse = require('yargs-parser');
-const zlib = require('zlib');
 
 const init = require('./src/init');
 const { resolveFile, createHash } = require('./src/common');
@@ -12,14 +11,8 @@ const {
 const {
     createObjectFile,
     readObjectFile,
-    getObjectFileType,
     createObjectFileContent,
-    readObjectFileContent,
-    readCompressedFile,
 } = require('./src/utils/object');
-const {
-    parseIndexFileContent,
-} = require('./src/utils/cacheIndex');
 
 const argv = parse(process.argv.slice(2), {
     alias: {
@@ -88,15 +81,3 @@ if (command === 'update-index') {
 if (command === 'ls-files') {
     const { stage } = argv;
 }
-
-const content = fs.readFileSync('index3');
-// console.log(content.toString());
-parseIndexFileContent(content);
-
-// console.log(content.slice(74, 75));
-// readCompressedFile('index')
-//     .then((content) => {
-//         console.log(content);
-//     }, (err) => {
-//         console.log('err', err);
-//     });
