@@ -15,7 +15,11 @@ const {
     getObjectFileType,
     createObjectFileContent,
     readObjectFileContent,
+    readCompressedFile,
 } = require('./src/utils/object');
+const {
+    parseIndexFileContent,
+} = require('./src/utils/cacheIndex');
 
 const argv = parse(process.argv.slice(2), {
     alias: {
@@ -56,7 +60,7 @@ if (command === 'hash-object') {
 
 // git cat-file -p <hash>
 if (command === 'cat-file') {
-    const { t, p } = argv;
+    const { t, p, s } = argv;
     const hash = params[0];
     if (t) {
         readObjectFile(hash)
@@ -79,3 +83,20 @@ if (command === 'update-index') {
     const { add, cacheinfo } = argv;
     const [_, hash, filename] = params;
 }
+
+// git ls-files --stage
+if (command === 'ls-files') {
+    const { stage } = argv;
+}
+
+const content = fs.readFileSync('index3');
+// console.log(content.toString());
+parseIndexFileContent(content);
+
+// console.log(content.slice(74, 75));
+// readCompressedFile('index')
+//     .then((content) => {
+//         console.log(content);
+//     }, (err) => {
+//         console.log('err', err);
+//     });

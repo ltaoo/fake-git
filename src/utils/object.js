@@ -48,8 +48,8 @@ function splitHeaderAndContent(fileContent) {
  * 
  * @param {string} content - 被加密的内容
  */
-function parseObjectFileContent(content) {
-    return readObjectFileContent(content)
+function parseCompressedContent(content) {
+    return inflate(content)
         .then((originalContent) => {
             return splitHeaderAndContent(originalContent);
         }, (err) => {
@@ -59,8 +59,7 @@ function parseObjectFileContent(content) {
 
 function getObjectFilePathFromHash(hash) {
     const { dir, filename } = splitHash(hash);
-    const filepath = resolveObjectFile(dir, filename);
-    return filepath;
+    return resolveObjectFile(dir, filename);
 }
 
 module.exports.readObjectFile = function readObjectFile(hash) {
@@ -69,7 +68,8 @@ module.exports.readObjectFile = function readObjectFile(hash) {
         console.log(`fatal: Not a valid object name ${hash}`);
         process.exit(1);
     }
-    return parseObjectFileContent(fs.readFileSync(filepath));
+    return readCompressedFile(filepath);
+    // return parseObjectFileContent(fs.readFileSync(filepath));
 }
 
 function getObjectFileType(hash) {
@@ -86,7 +86,7 @@ function createObjectFileContent(content) {
 }
 module.exports.createObjectFileContent = createObjectFileContent;
 
-function readObjectFileContent(content) {
+function inflate(content) {
     return new Promise((resolve, reject) => {
         zlib.inflate(content, (err, origin) => {
             if (err) {
@@ -98,4 +98,12 @@ function readObjectFileContent(content) {
     });
 }
 
-module.exports.readObjectFileContent = readObjectFileContent;
+module.exports.inflate = inflate;
+
+function readCompressedFile(filepath) {
+    const content = fs.readFileSync(filepath);
+    console.log('compressed content', content);
+    return parseCompressedContent(content);
+}
+
+module.exports.readCompressedFile = readCompressedFile;

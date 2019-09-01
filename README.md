@@ -56,6 +56,12 @@ usage: git cat-file (-t [--allow-unknown-type] | -s [--allow-unknown-type] | -e 
 `update-index` 第四个参数用来指定 `hash` 值，这个 `hash` 必须有相应的 `object` 文件。
 可以用 `hash-object -w test.txt` 获取到 `hash` 值。
 
+## index 文件详解
+在 `.git` 根目录下，存在一个 `index` 文件，这个文件就是所谓的「缓存区」了。这个文件包含什么内容呢？
+
+https://mincong-h.github.io/2018/04/28/git-index/
 
 ## 参考
+- [对象存储](https://git-scm.com/book/zh/v1/Git-%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86-Git-%E5%AF%B9%E8%B1%A1#%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A8)
+- [index-format.txt](https://github.com/git/git/blob/master/Documentation/technical/index-format.txt)
 - https://cloud.tencent.com/developer/article/1105427
