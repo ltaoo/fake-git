@@ -7,7 +7,7 @@ function parseFileMode(buffer) {
     return buffer.toJSON().data.map(num => num.toString(8));
 }
 function buffer2hex(buffer) {
-    return buffer.toJSON().data.map(num => num.toString(16)).join('');
+    return buffer.toJSON().data.map(num => fillZero(num.toString(16), 2)).join('');
 }
 function getSize(buffer) {
     return parseInt(buffer2hex(buffer), 16);
@@ -170,7 +170,8 @@ function createIndexEntryContent({
     filepath,
     hash,
 }) {
-    const mockPath = path.resolve(process.cwd(), '..', '..', 'git-test');
+    // const mockPath = path.resolve(process.cwd(), '..', '..', 'git-test');
+    const mockPath = path.resolve(process.cwd());
     const realFilepath = path.join(mockPath, filepath);
     const stat = fs.statSync(realFilepath);
     const  {

@@ -1,7 +1,21 @@
 const fs = require('fs');
 const path = require('path');
+const execSync = require('child_process').execSync;
 
 const parse = require('yargs-parser');
+
+function checkHasInstalledRuby() {
+    try {
+        execSync('ruby -v');
+        return true;
+    } catch (err) {
+        return false;
+    }
+}
+if (!checkHasInstalledRuby()) {
+    console.log('Please install ruby');
+    process.exit(1);
+}
 
 const init = require('./src/init');
 const { resolveFile, createHash } = require('./src/common');
@@ -73,7 +87,7 @@ if (command === 'cat-file') {
         });
 }
 
-//                                           83baae61804e65cc73a7201a725275c7666a30
+//                                           83baae61804e65cc73a7201a725275 c76 66a30
 // git update-index --add --cacheinfo 100644 83baae61804e65cc73a7201a7252750c76066a30 test.txt
 if (command === 'update-index') {
     const { add, cacheinfo } = argv;
