@@ -1,7 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 
-const { createHash, getNanosecondsOfFile } = require('../common');
+const { resolveFile, createHash, getNanosecondsOfFile } = require('../common');
 
 function parseFileMode(buffer) {
     return buffer.toJSON().data.map(num => num.toString(8));
@@ -60,8 +60,20 @@ function parseSingleObjectFile(buffer) {
 function getTimestamp(buffer) {
     return parseInt(getHashFromBuffer(buffer), 16);
 }
+function getSizeLabel(buffer) {
+    return parseInt(buffer2hex(buffer), 16);
+}
+function getModeLabel(buffer) {
+    const hex = buffer2hex(buffer);
+    return parseInt(hex, 16).toString(8);
+}
+function fillMilliseconds(timestamp) {
+    return Number(String(timestamp) + '000');
+}
+
 function splitMultipleObjectFiles(buffer, fileNum) {
     const result = [];
+    const files = [];
     let start = 0;
     for (let i = 0; i < fileNum; i += 1) {
         const ctime = getTimestamp(buffer.slice(start, start + 4));
@@ -86,26 +98,40 @@ function splitMultipleObjectFiles(buffer, fileNum) {
         console.log('hash', hash);
         const fileLen = getSize(buffer.slice(start + 60, start + 62));
         // console.log(fileLen);
-        const file = buffer.slice(start + 62, start + 62 + fileLen + 1);
-        console.log(getChar(file));
-        const end = start + 62 + fileLen + 1;
-        console.log('index', i, 'range is', start, end);
+        const file = buffer.slice(start + 62, start + 62 + fileLen);
+        // console.log(getChar(file));
+        const nulCharacterLength = 1;
+        const end = start + 62 + fileLen + nulCharacterLength;
+        // console.log('index', i, 'range is', start, end);
         result.push(buffer.slice(start, end));
+        files.push({
+            filepath: file.toString(),
+            hash,
+            size: getSizeLabel(size),
+            mode: getModeLabel(mode),
+            ctime: fillMilliseconds(ctime),
+            mtime: fillMilliseconds(mtime),
+        });
         start = end;
     }
-    return result;
+    return files;
 }
 // d8 32 9f c1 cc 93 87 80 ff dd 9f 94 e0 d3 64 e0 ea 74 f5 79
 /**
  * @param {Buffer}
  */
-module.exports.parseIndexFileContent = function parseIndexFileContent(content) {
+function parseIndexFileContent(content) {
     const meta = content.slice(0, 12);
     const fileNum = getSize(meta.slice(8, 12));
     const lastContent = content.slice(12, content.length);
     // console.log(lastContent.slice(40, 71));
     const files = splitMultipleObjectFiles(lastContent, fileNum);
+
+    return {
+        files
+    };
 }
+module.exports.parseIndexFileContent = parseIndexFileContent;
 
 function removeMilliseconds(timestamp) {
     return Number(String(timestamp).slice(0, -3));
@@ -139,7 +165,7 @@ function numToBuffer(num, len = 8) {
     return Buffer.from(fillZero(Number(num).toString(16), len), 'hex');
 }
 
-function createIndexFileContent({
+function createIndexEntryContent({
     mode,
     filepath,
     hash,
@@ -152,7 +178,6 @@ function createIndexFileContent({
         // ctime 会在文件修改后改变
         ctime, mtime,
     } = stat;
-    const header = Buffer.from('444952430000000200000001', 'hex');
     const ctimeBuffer = getTimeBuffer(ctime);
     const mtimeBuffer = getTimeBuffer(mtime);
     const [ctimeNanosecond, mtimeNanosecond] = getNanosecondsOfFile(realFilepath);
@@ -167,6 +192,7 @@ function createIndexFileContent({
     const gidBuffer = numToBuffer(gid, 8);
     const sizeBuffer = numToBuffer(size, 8);
     const hashBuffer = Buffer.from(hash, 'hex');
+    console.log(hash, hashBuffer);
     const filepathLength = filepath.length;
     const filepathLengthBuffer = numToBuffer(filepathLength, 4);
     const flagsBuffer = Buffer.from(filepath);
@@ -188,8 +214,36 @@ function createIndexFileContent({
         flagsBuffer,
         nulBuffer,
     ]);
+
+    return content;
+}
+
+function createIndexFileContent(entries) {
+    const entryNum = entries.length;
+    const entryNumBuffer = numToBuffer(entryNum, 8);
+    const header = Buffer.concat([Buffer.from('4449524300000002', 'hex'), entryNumBuffer]);
+    // console.log('header', header);
+    const content = Buffer.concat(entries.map(entry => {
+        return createIndexEntryContent(entry);
+    }));
     const checksumHash = createHash(Buffer.concat([header, content]));
-    console.log(checksumHash);
+    // console.log(checksumHash);
+    return Buffer.concat([
+        header,
+        content,
+        Buffer.from(checksumHash, 'hex'),
+    ]);
 }
 
 module.exports.createIndexFileContent = createIndexFileContent;
+
+function createIndexFile(buffer) {
+    fs.writeFileSync(resolveFile('index'), buffer);
+}
+module.exports.createIndexFile = createIndexFile;
+
+function readIndexFile() {
+    const content = fs.readFileSync(resolveFile('index'));
+    return parseIndexFileContent(content);
+}
+module.exports.readIndexFile = readIndexFile;

@@ -103,20 +103,23 @@ function createBlobFileContent({
 
 module.exports.createBlobFileContent = createBlobFileContent;
 
-function createTreeFileContent({
-    filepath,
-    hash,
-    mode,
-}) {
-    const hashLength = 20;
-    const nulCharacter = String.fromCharCode(0);
-    const spaceCharacterLength = 1;
-    const nulCharacterLength = 1;
-    const length = filepath.length + mode.length + spaceCharacterLength + nulCharacterLength + hashLength;
-    return Buffer.concat([
-        Buffer.from(`tree ${length}${nulCharacter}${mode} ${filepath}${nulCharacter}`, 'utf-8'),
-        Buffer.from(hash, 'hex'),
-    ]);
+function createTreeFileContent(objects) {
+    return Buffer.concat(objects.map(object => {
+        const {
+            filepath,
+            hash,
+            mode,
+        } = object;
+        const hashLength = 20;
+        const nulCharacter = String.fromCharCode(0);
+        const spaceCharacterLength = 1;
+        const nulCharacterLength = 1;
+        const length = filepath.length + mode.length + spaceCharacterLength + nulCharacterLength + hashLength;
+        return Buffer.concat([
+            Buffer.from(`tree ${length}${nulCharacter}${mode} ${filepath}${nulCharacter}`, 'utf-8'),
+            Buffer.from(hash, 'hex'),
+        ]);
+    }));
 }
 module.exports.createTreeFileContent = createTreeFileContent;
 

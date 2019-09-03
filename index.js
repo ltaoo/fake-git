@@ -17,7 +17,9 @@ const {
 } = require('./src/utils/object');
 const {
     createIndexFileContent,
-} = require('../src/utils/cacheIndex');
+    createIndexFile,
+    readIndexFile,
+} = require('./src/utils/cacheIndex');
 
 const argv = parse(process.argv.slice(2), {
     alias: {
@@ -71,14 +73,25 @@ if (command === 'cat-file') {
         });
 }
 
+//                                           83baae61804e65cc73a7201a725275c7666a30
 // git update-index --add --cacheinfo 100644 83baae61804e65cc73a7201a7252750c76066a30 test.txt
 if (command === 'update-index') {
     const { add, cacheinfo } = argv;
     const [_, mode, hash, filename] = params;
+    const content = createIndexFileContent([{
+        mode: '100644',
+        filepath: 'test.txt',
+        hash: '83baae61804e65cc73a7201a7252750c76066a30',
+    }]);
+    createIndexFile(content);
 }
 
 if (command === 'write-tree') {
-
+    const result = readIndexFile();
+    const content = createTreeFileContent(result.files);
+    console.log(content);
+    const hash = createHash(content);
+    console.log(hash);
 }
 
 
