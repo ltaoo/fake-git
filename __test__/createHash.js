@@ -16,3 +16,7 @@ const { createTreeFileContent, createBlobFileContent } = require('../src/utils/o
     const hash = createHash(buffer);
     console.log('tree hash', hash);
 })();
+
+(() => {
+    const buffer = Buffer.from(`444952430000000200000001`, 'hex');
+})();

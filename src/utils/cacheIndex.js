@@ -1,7 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 
-const { getNanosecondsOfFile } = require('../common');
+const { createHash, getNanosecondsOfFile } = require('../common');
 
 function parseFileMode(buffer) {
     return buffer.toJSON().data.map(num => num.toString(8));
@@ -64,13 +64,12 @@ function splitMultipleObjectFiles(buffer, fileNum) {
     const result = [];
     let start = 0;
     for (let i = 0; i < fileNum; i += 1) {
-        console.log(buffer.slice(start, start + 16));
         const ctime = getTimestamp(buffer.slice(start, start + 4));
-        console.log('ctime', ctime);
-        console.log('ctime seconds', buffer.slice(start + 4, start + 8));
+        // console.log('ctime', ctime);
+        // console.log('ctime seconds', buffer.slice(start + 4, start + 8));
         const mtime = getTimestamp(buffer.slice(start + 8, start + 12));
-        console.log('mtime', mtime);
-        console.log('mtime seconds', buffer.slice(start + 12, start + 16));
+        // console.log('mtime', mtime);
+        // console.log('mtime seconds', buffer.slice(start + 12, start + 16));
         const dev = buffer.slice(start + 16, start + 20);
         // console.log(dev);
         const ino = buffer.slice(start + 20, start + 24);
@@ -104,6 +103,7 @@ module.exports.parseIndexFileContent = function parseIndexFileContent(content) {
     const meta = content.slice(0, 12);
     const fileNum = getSize(meta.slice(8, 12));
     const lastContent = content.slice(12, content.length);
+    // console.log(lastContent.slice(40, 71));
     const files = splitMultipleObjectFiles(lastContent, fileNum);
 }
 
@@ -130,6 +130,14 @@ function fillZero(str, num) {
     }
     return '0'.repeat(diff) + str;
 }
+function octalToHex(str) {
+    return parseInt(str, 8).toString(16);
+}
+function hexToOctal(str) {
+}
+function numToBuffer(num, len = 8) {
+    return Buffer.from(fillZero(Number(num).toString(16), len), 'hex');
+}
 
 function createIndexFileContent({
     mode,
@@ -148,14 +156,40 @@ function createIndexFileContent({
     const ctimeBuffer = getTimeBuffer(ctime);
     const mtimeBuffer = getTimeBuffer(mtime);
     const [ctimeNanosecond, mtimeNanosecond] = getNanosecondsOfFile(realFilepath);
-    /**
-     * ctime seconds <Buffer 2e 44 94 ef>
-     * mtime seconds <Buffer 03 5d 42 97>
-     */
-    console.log(ctimeNanosecond, mtimeNanosecond);
     const ctimeNanosecondBuffer = timestampToBuffer(ctimeNanosecond);
     const mtimeNanosecondBuffer = timestampToBuffer(mtimeNanosecond);
-    console.log(ctimeNanosecondBuffer, mtimeNanosecondBuffer);
+
+    const deviceBuffer = numToBuffer(dev, 8);
+    const inoBuffer = Buffer.from('02b35f02', 'hex');
+    // 八进制
+    const modeBuffer = Buffer.from(fillZero(octalToHex(mode), 8), 'hex');
+    const uidBuffer = numToBuffer(uid, 8);
+    const gidBuffer = numToBuffer(gid, 8);
+    const sizeBuffer = numToBuffer(size, 8);
+    const hashBuffer = Buffer.from(hash, 'hex');
+    const filepathLength = filepath.length;
+    const filepathLengthBuffer = numToBuffer(filepathLength, 4);
+    const flagsBuffer = Buffer.from(filepath);
+    const nulBuffer = Buffer.from('0000', 'hex');
+
+    const content = Buffer.concat([
+        ctimeBuffer,
+        ctimeNanosecondBuffer,
+        mtimeBuffer,
+        mtimeNanosecondBuffer,
+        deviceBuffer,
+        inoBuffer,
+        modeBuffer,
+        uidBuffer,
+        gidBuffer,
+        sizeBuffer,
+        hashBuffer,
+        filepathLengthBuffer,
+        flagsBuffer,
+        nulBuffer,
+    ]);
+    const checksumHash = createHash(Buffer.concat([header, content]));
+    console.log(checksumHash);
 }
 
 module.exports.createIndexFileContent = createIndexFileContent;

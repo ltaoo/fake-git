@@ -71,15 +71,15 @@ usage: git cat-file (-t [--allow-unknown-type] | -s [--allow-unknown-type] | -e 
 const buffer = `<Buffer
 5d 69 ec 9d 03 5d 42 97 <- ctime
 5d 69 ec 9d 03 5d 42 97 <- mtime
-01 00 00 04             <-
-02 b3 5f 02
-00 00 81 a4
-00 00 01 f5
-00 00 00 14
-00 00 00 0a
+01 00 00 04             <- device
+02 b3 5f 02             <- ino
+00 00 81 a4             <- mode
+00 00 01 f5             <- uid
+00 00 00 14             <- gid
+00 00 00 0a             <- file size
 83 ba ae 61 80 4e 65 cc 73 a7 20 1a 72 52 75 0c 76 06 6a 30
-00 08
-74 65 73 74 2e 74 78 74
+00 08                   <- flags
+74 65 73 74 2e 74 78 74 <- 根据 flags 得到的文件名
 00 00 <-- 这里就是结尾了
 4e 8d ea 69 cd 81 0b 3f 22 28 94 4b 3c 2a 15 97 c1 87 22 40
 >`
