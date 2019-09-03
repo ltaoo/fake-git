@@ -61,7 +61,25 @@ usage: git cat-file (-t [--allow-unknown-type] | -s [--allow-unknown-type] | -e 
 
 https://mincong-h.github.io/2018/04/28/git-index/
 
+## 源码
+
+### object
+
+```c
+/*
+ * The object type is stored in 3 bits.
+ */
+struct object {
+	unsigned parsed : 1;
+	unsigned type : TYPE_BITS;
+	unsigned flags : FLAG_BITS;
+	struct object_id oid;
+};
+```
+https://github.com/git/git/blob/77556354bb/object.c#L144
+
 ## 参考
 - [对象存储](https://git-scm.com/book/zh/v1/Git-%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86-Git-%E5%AF%B9%E8%B1%A1#%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A8)
 - [index-format.txt](https://github.com/git/git/blob/master/Documentation/technical/index-format.txt)
 - https://cloud.tencent.com/developer/article/1105427
+- [git object.c](https://github.com/git/git/blob/master/object.c#L210)

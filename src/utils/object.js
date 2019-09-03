@@ -1,7 +1,7 @@
 const fs = require('fs');
 const zlib = require('zlib');
 
-const { ROOT_DIR, resolveFile } = require('../common');
+const { ROOT_DIR, createHash, resolveFile } = require('../common');
 const { isExist } = require('./file');
 
 function resolveObjectFile(...params) {
@@ -52,13 +52,12 @@ function splitHeaderAndContent(fileContent) {
  * @param {string} content - 被加密的内容
  */
 function parseCompressedContent(content) {
-    return inflate(content)
-        .then((originalContent) => {
-            console.log(originalContent);
-            return splitHeaderAndContent(originalContent);
-        }, (err) => {
-            console.log(err);
-        });
+    console.log('content', content);
+    const originalContent = zlib.inflateSync(content);
+    console.log('originalContent', originalContent, originalContent.length);
+    const hash = createHash(originalContent);
+    console.log('hash', hash);
+    return splitHeaderAndContent(originalContent.toString());
 }
 
 function getObjectFilePathFromHash(hash) {
@@ -84,21 +83,46 @@ function getObjectFileType(hash) {
     }
 }
 
+/**
+ * deprecated
+ * @param {string} content 
+ */
 function createObjectFileContent(content) {
     return Buffer.from(`blob ${content.length}${String.fromCharCode(0)}${content}`, 'utf-8');
 }
+module.exports.createObjectFileContent = createObjectFileContent;
+
+function createBlobFileContent({
+    content,
+}) {
+    const lineBreak = String.fromCharCode(10);
+    const lastLineBreakLength = 1;
+    const length = content.length + lastLineBreakLength;
+    return Buffer.from(`blob ${length}${String.fromCharCode(0)}${content}${lineBreak}`, 'utf-8');
+}
+
+module.exports.createBlobFileContent = createBlobFileContent;
+
 function createTreeFileContent({
     filepath,
     hash,
     mode,
 }) {
-    return Buffer.from(`tree ${content.length}${String.fromCharCode(0)}${content}`, 'utf-8');
+    const hashLength = 20;
+    const nulCharacter = String.fromCharCode(0);
+    const spaceCharacterLength = 1;
+    const nulCharacterLength = 1;
+    const length = filepath.length + mode.length + spaceCharacterLength + nulCharacterLength + hashLength;
+    return Buffer.concat([
+        Buffer.from(`tree ${length}${nulCharacter}${mode} ${filepath}${nulCharacter}`, 'utf-8'),
+        Buffer.from(hash, 'hex'),
+    ]);
 }
-module.exports.createObjectFileContent = createObjectFileContent;
+module.exports.createTreeFileContent = createTreeFileContent;
 
-function inflate(content) {
+function inflate(content, params) {
     return new Promise((resolve, reject) => {
-        zlib.inflate(content, (err, origin) => {
+        zlib.inflate(content, params, (err, origin) => {
             if (err) {
                 reject(err);
                 return;
