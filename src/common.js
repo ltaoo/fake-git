@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const path = require('path');
 const zlib = require('zlib');
+const execSync = require('child_process').execSync;
 
 const ROOT_DIR = path.join(process.cwd(), '.fake-git');
 
@@ -42,3 +43,23 @@ function deflate(content) {
     });
 }
 module.exports.deflate = deflate;
+
+/**
+ * 用 ruby 获取文件 ctime 和 mtime 的纳秒数
+ * type ctimeNanosecond = number;
+ * type mtimeNanosecond = number;
+ * type FileCtimeAndMTimeNanoseconds = [ctimeNanosecond, mtimeNanosecond];
+ * @param {string} filepath 
+ * @return {FileCtimeAndMTimeNanoseconds}
+ */
+function getNanosecondsOfFile(filepath) {
+    const ctimeNanosecond = execSync(`ruby lib/nanoSeconds.rb ${filepath}`, {
+        cwd: process.cwd(),
+    });
+    const [ctime, mtime] = ctimeNanosecond.toString().split('\n');
+    return [
+        Number(ctime),
+        Number(mtime),
+    ];
+}
+module.exports.getNanosecondsOfFile = getNanosecondsOfFile;

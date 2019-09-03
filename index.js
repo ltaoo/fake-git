@@ -11,8 +11,13 @@ const {
 const {
     createObjectFile,
     readObjectFile,
-    createObjectFileContent,
+
+    createBlobFileContent,
+    createTreeFileContent,
 } = require('./src/utils/object');
+const {
+    createIndexFileContent,
+} = require('../src/utils/cacheIndex');
 
 const argv = parse(process.argv.slice(2), {
     alias: {
@@ -38,7 +43,7 @@ if (command === 'add') {
 if (command === 'hash-object') {
     const { w: file } = argv;
     const content = fs.readFileSync(path.resolve(file), 'utf-8');
-    const objectContent = createObjectFileContent(content);
+    const objectContent = createBlobFileContent(content);
     const hash = createHash(objectContent);
 
     const dir = hash.slice(0, 2);
@@ -55,27 +60,28 @@ if (command === 'hash-object') {
 if (command === 'cat-file') {
     const { t, p, s } = argv;
     const hash = params[0];
-    if (t) {
-        readObjectFile(hash)
-            .then(({ header: { type } }) => {
+    readObjectFile(hash)
+        .then(({ header: { type }, content }) => {
+            if (t) {
                 console.log(type);
-            });
-        return;
-    }
-    if (p) {
-        readObjectFile(hash)
-            .then(({ content }) => {
+            }
+            if (p) {
                 console.log(content);
-            });
-        return;
-    }
+            }
+        });
 }
 
 // git update-index --add --cacheinfo 100644 83baae61804e65cc73a7201a7252750c76066a30 test.txt
 if (command === 'update-index') {
     const { add, cacheinfo } = argv;
-    const [_, hash, filename] = params;
+    const [_, mode, hash, filename] = params;
 }
+
+if (command === 'write-tree') {
+
+}
+
+
 
 // git ls-files --stage
 if (command === 'ls-files') {

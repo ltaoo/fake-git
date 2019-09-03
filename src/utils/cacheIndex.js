@@ -1,3 +1,8 @@
+const path = require('path');
+const fs = require('fs');
+
+const { getNanosecondsOfFile } = require('../common');
+
 function parseFileMode(buffer) {
     return buffer.toJSON().data.map(num => num.toString(8));
 }
@@ -59,10 +64,13 @@ function splitMultipleObjectFiles(buffer, fileNum) {
     const result = [];
     let start = 0;
     for (let i = 0; i < fileNum; i += 1) {
+        console.log(buffer.slice(start, start + 16));
         const ctime = getTimestamp(buffer.slice(start, start + 4));
         console.log('ctime', ctime);
+        console.log('ctime seconds', buffer.slice(start + 4, start + 8));
         const mtime = getTimestamp(buffer.slice(start + 8, start + 12));
         console.log('mtime', mtime);
+        console.log('mtime seconds', buffer.slice(start + 12, start + 16));
         const dev = buffer.slice(start + 16, start + 20);
         // console.log(dev);
         const ino = buffer.slice(start + 20, start + 24);
@@ -93,10 +101,61 @@ function splitMultipleObjectFiles(buffer, fileNum) {
  * @param {Buffer}
  */
 module.exports.parseIndexFileContent = function parseIndexFileContent(content) {
-    console.log(content.length);
     const meta = content.slice(0, 12);
     const fileNum = getSize(meta.slice(8, 12));
     const lastContent = content.slice(12, content.length);
-    console.log(lastContent.slice(70, 104));
     const files = splitMultipleObjectFiles(lastContent, fileNum);
 }
+
+function removeMilliseconds(timestamp) {
+    return Number(String(timestamp).slice(0, -3));
+}
+function timestampToBuffer(timestamp) {
+    return Buffer.from(fillZero(timestamp.toString(16), 8), 'hex');
+}
+function getTimeBuffer(time) {
+    const timestamp = removeMilliseconds(new Date(time).valueOf());
+    return timestampToBuffer(timestamp);
+}
+
+/**
+ * 往字符串前面填充 0
+ * @param {string} str - 要填充的字符串
+ * @param {number} num - 预期最终的位数
+ */
+function fillZero(str, num) {
+    const diff = num - str.length;
+    if (diff === 0) {
+        return str;
+    }
+    return '0'.repeat(diff) + str;
+}
+
+function createIndexFileContent({
+    mode,
+    filepath,
+    hash,
+}) {
+    const mockPath = path.resolve(process.cwd(), '..', '..', 'git-test');
+    const realFilepath = path.join(mockPath, filepath);
+    const stat = fs.statSync(realFilepath);
+    const  {
+        dev, size, uid, gid, ino,
+        // ctime 会在文件修改后改变
+        ctime, mtime,
+    } = stat;
+    const header = Buffer.from('444952430000000200000001', 'hex');
+    const ctimeBuffer = getTimeBuffer(ctime);
+    const mtimeBuffer = getTimeBuffer(mtime);
+    const [ctimeNanosecond, mtimeNanosecond] = getNanosecondsOfFile(realFilepath);
+    /**
+     * ctime seconds <Buffer 2e 44 94 ef>
+     * mtime seconds <Buffer 03 5d 42 97>
+     */
+    console.log(ctimeNanosecond, mtimeNanosecond);
+    const ctimeNanosecondBuffer = timestampToBuffer(ctimeNanosecond);
+    const mtimeNanosecondBuffer = timestampToBuffer(mtimeNanosecond);
+    console.log(ctimeNanosecondBuffer, mtimeNanosecondBuffer);
+}
+
+module.exports.createIndexFileContent = createIndexFileContent;
